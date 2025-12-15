@@ -1,37 +1,54 @@
 import { NestFactory } from "@nestjs/core";
 import { ExpressAdapter } from "@nestjs/platform-express";
-import type { Handler } from "aws-lambda";
 import express from "express";
 import serverlessExpress from "@codegenie/serverless-express";
-import { applyAppConfig } from "./bootstrap";
+import type {
+  APIGatewayProxyEventV2,
+  Context,
+  APIGatewayProxyResultV2,
+} from "aws-lambda";
 
 import { AppModule } from "./app.module";
+import { applyAppConfig } from "./bootstrap";
 
-let cached: any;
+/**
+ * ✅ Node.js 18+/24 官方推荐的「纯 Promise Handler」
+ * ❌ 不包含 callback
+ */
+type LambdaHandlerV2 = (
+  event: APIGatewayProxyEventV2,
+  context: Context,
+) => Promise<APIGatewayProxyResultV2>;
 
-async function bootstrap() {
+let cachedHandler: LambdaHandlerV2 | undefined;
+
+async function bootstrap(): Promise<LambdaHandlerV2> {
   const app = express();
 
-  const nestApp = await NestFactory.create(AppModule, new ExpressAdapter(app), {
-    logger: ["log", "error", "warn"],
-  });
+  const nestApp = await NestFactory.create(
+    AppModule,
+    new ExpressAdapter(app),
+    {
+      logger: ["log", "error", "warn"],
+    },
+  );
 
   applyAppConfig(nestApp);
-
   await nestApp.init();
 
-  // 不让 TS 推断返回类型：直接当作 any
-  return serverlessExpress({ app }) as any;
+  /**
+   * @codegenie/serverless-express 在 Node 18+ 返回的就是 Promise handler
+   */
+  return serverlessExpress({ app }) as unknown as LambdaHandlerV2;
 }
 
-export const handler: Handler = async (
-  event: any,
-  context: any,
-  callback: any,
-) => {
-  if (!cached) {
-    cached = await bootstrap();
+export const handler: LambdaHandlerV2 = async (event, context) => {
+  // Lambda + Prisma 必备
+  context.callbackWaitsForEmptyEventLoop = false;
+
+  if (!cachedHandler) {
+    cachedHandler = await bootstrap();
   }
-  // 统一把 callback 也传进去，避免“缺 callback”
-  return cached(event, context, callback);
+
+  return cachedHandler(event, context);
 };
