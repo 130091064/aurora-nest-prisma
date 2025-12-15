@@ -12,7 +12,6 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix("api");
-  console.log("NODE_EXTRA_CA_CERTS =", process.env.NODE_EXTRA_CA_CERTS);
   await app.listen(process.env.PORT ? Number(process.env.PORT) : 3000);
 }
 bootstrap();

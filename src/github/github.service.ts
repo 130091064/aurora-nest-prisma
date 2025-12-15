@@ -18,6 +18,7 @@ export class GithubService {
           "X-GitHub-Api-Version": "2022-11-28",
           "User-Agent": "aurora-nest-prisma", // 有些情况下必须带
         },
+        proxy: false, // 禁用 axios 代理
       }),
     );
 
