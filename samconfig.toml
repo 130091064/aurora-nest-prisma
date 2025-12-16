@@ -4,8 +4,14 @@ version = 0.1
 use_container = true
 
 [default.deploy.parameters]
-stack_name = "aurora-nest-api"
+stack_name = "aurora-nest-prisma"
 region = "ap-southeast-1"
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
+s3_prefix = "aurora-nest-prisma"
+disable_rollback = true
+image_repositories = []
+
+[default.global.parameters]
+region = "ap-southeast-1"

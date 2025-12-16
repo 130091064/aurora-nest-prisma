@@ -66,5 +66,7 @@ template.yaml
 # Lambda layer dependencies
 layer/nodejs/node_modules/
 layer/nodejs/.pnpm-store/
+layer/nodejs/.pnpm/
+layer
 
 env.json
